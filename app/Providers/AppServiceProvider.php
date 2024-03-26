@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Contacts\IContactRepository;
+use App\Contacts\IUsersRepository;
+use App\Repository\ContactRepository;
+use App\Repository\UserRepository;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +15,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(IContactRepository::class,ContactRepository::class);
+        $this->app->bind(IUsersRepository::class, UserRepository::class);
     }
 
     /**

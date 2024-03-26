@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\NotFoundException;
 use App\Models\Contact;
 
 class IndexContactsService
@@ -14,15 +15,10 @@ class IndexContactsService
                 $phoneQuery->where('phone', 'like', "%$query%");
             })
             ->get();
+        if ($contacts === null) {
+            throw new NotFoundException(__('messages.object_not_found'), 404);
+        }
 
         return $contacts;
     }
-//    public function searchByPhoneOrName($query)
-//    {
-//        return  Contact::where('first_name', 'like', "%$query%")
-//            ->orWhere('last_name', 'like', "%$query%")
-//            ->orWhereHas('phones', function ($query) use ($query) {
-//                $query->where('phone', 'like', "%$query%");
-//            })
-//            ->get();}
 }

@@ -16,12 +16,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-//Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//    return $request->user();
 
 
-//});
-
+//Route::post('/register', [AuthController::class, 'register']);
+//Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register/verify', [AuthController::class, 'confirmationEmail']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
+Route::middleware('check.token')->middleware('auth:sanctum')->group(function () {
 Route::get('/contacts', [ContactsController::class, 'index']);
+Route::get('/contacts/{contactId}', [ContactsController::class, 'show']);
+Route::post('/contacts', [ContactsController::class, 'store']);
+Route::post('/contacts/{id}', [ContactsController::class, 'update']);
+});

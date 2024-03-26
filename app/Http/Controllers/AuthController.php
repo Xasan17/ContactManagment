@@ -2,48 +2,81 @@
 
 namespace App\Http\Controllers;
 
+use App\DTO\UsersDTO;
+use App\Exceptions\BadCredentialsException;
+use App\Exceptions\ExistsObjectException;
+use App\Exceptions\NotFoundException;
+use App\Exceptions\NotVerifiedException;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
+use App\Services\AuthUsersService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-
-    /**
-     * Register a new user.
-     *
-     * @param  \App\Http\Requests\RegisterRequest  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function register(RegisterRequest $request)
+    public function __construct(
+        private AuthUsersService $authUsersService
+    )
     {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-        ]);
-
-        return response()->json(['message' => 'User registered successfully', 'user' => $user], 201);
     }
 
     /**
-     * Login the user.
-     *
-     * @param  \App\Http\Requests\LoginRequest  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @throws ExistsObjectException
      */
-    public function login(LoginRequest $request)
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $credentials = $request->only('email', 'password');
+        $validData = $request->validated();
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            $token = $user->createToken('authToken')->accessToken;
-            return response()->json(['message' => 'User logged in successfully', 'token' => $token], 200);
-        } else {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
+        $this->authUsersService->register(UsersDTO::fromArray($validData));
+
+        return response()->json([
+            'message' =>__('messages.code_send'),
+        ]);
+    }
+
+    /**
+     * @throws BadCredentialsException
+     */
+    public function confirmationEmail(Request $request): JsonResponse
+    {
+        $this->authUsersService->confirmationEmail($request);
+
+        return response()->json([
+            'message'=>__('messages.email_verified'),
+        ]);
+
+    }
+
+    /**
+     * @throws BadCredentialsException
+     * @throws NotVerifiedException
+     * @throws NotFoundException
+     */
+    public function login(LoginRequest $request): JsonResponse
+    {
+        /**
+         * @var User $user
+         */
+        $validatedData = $request->validated();
+
+        $userToken = $this->authUsersService->login($validatedData);
+
+        return response()->json([
+            'token' => $userToken
+        ]);
+
+    }
+
+    public function logout(): JsonResponse
+    {
+
+        auth()->user()->tokens()->delete();
+
+        return response()->json([
+            "message" => "logged out"
+        ]);
     }
 }
